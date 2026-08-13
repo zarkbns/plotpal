@@ -1,6 +1,6 @@
 {
   "name": "Plotpal",
-  "description": "Manuscript continuity checker API powered by FastAPI, Pydantic, and HydraDB",
+  "description": "Manuscript continuity checker with dark terminal React frontend powered by FastAPI, Pydantic, and HydraDB",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

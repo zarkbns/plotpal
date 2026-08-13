@@ -1,7 +1,9 @@
+import os
 import logging
 from fastapi import FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
+from fastapi.staticfiles import StaticFiles
 
 from app.schemas import SceneIngestion, ContinuityCheck, EntityExtraction
 from app.hydra_client import HydraClient
@@ -83,21 +85,47 @@ def ingest_scene(scene: SceneIngestion):
     return result
 
 
+@app.post("/check-continuity", status_code=status.HTTP_200_OK)
 @app.post("/continuity/check", status_code=status.HTTP_200_OK)
 def run_continuity_check(check_req: ContinuityCheck):
     """
     Check active manuscript text segment for plot holes and continuity violations against HydraDB history.
+    Supports both {text, in_universe_time, chapter, manuscript_position} and {active_text, current_timeline_marker}.
     """
-    marker = check_req.current_timeline_marker if check_req.current_timeline_marker is not None else 999999
-    logger.info("POST /continuity/check received for timeline_marker %s", marker)
-    return check_continuity(check_req.active_text, marker, hydra_client)
+    active_text = check_req.active_text if check_req.active_text is not None else (check_req.text or "")
+    raw_marker = check_req.current_timeline_marker if check_req.current_timeline_marker is not None else check_req.in_universe_time
+    try:
+        marker = int(raw_marker) if raw_marker is not None else 999999
+    except (ValueError, TypeError):
+        marker = 999999
+
+    logger.info("Continuity check received for timeline_marker %s (text length: %d)", marker, len(active_text))
+    return check_continuity(active_text, marker, hydra_client)
+
+
+# Mount static assets if dist exists
+dist_dir = os.path.join(os.getcwd(), "dist")
+frontend_dist_dir = os.path.join(os.getcwd(), "frontend", "dist")
+assets_dir = os.path.join(dist_dir, "assets") if os.path.isdir(os.path.join(dist_dir, "assets")) else os.path.join(frontend_dist_dir, "assets")
+
+if os.path.isdir(assets_dir):
+    app.mount("/assets", StaticFiles(directory=assets_dir), name="assets")
 
 
 @app.get("/", response_class=HTMLResponse)
 def root_dashboard():
     """
-    Interactive API landing page for Plotpal preview UI.
+    Serves the React frontend SPA if compiled, otherwise the interactive API dashboard.
     """
+    dist_index = os.path.join(dist_dir, "index.html")
+    if os.path.isfile(dist_index):
+        with open(dist_index, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+
+    frontend_index = os.path.join(frontend_dist_dir, "index.html")
+    if os.path.isfile(frontend_index):
+        with open(frontend_index, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
     return """
     <!DOCTYPE html>
     <html lang="en">

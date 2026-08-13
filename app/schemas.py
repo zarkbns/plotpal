@@ -12,9 +12,23 @@ class SceneIngestion(BaseModel):
 
 
 class ContinuityCheck(BaseModel):
-    active_text: str = Field(..., description="Active manuscript text segment to evaluate for plot holes")
+    active_text: Optional[str] = Field(
+        default=None, description="Active manuscript text segment to evaluate for plot holes"
+    )
+    text: Optional[str] = Field(
+        default=None, description="Active manuscript text segment alias"
+    )
     current_timeline_marker: Optional[Any] = Field(
         default=None, description="In-universe time or milestone marker for continuity check"
+    )
+    in_universe_time: Optional[Any] = Field(
+        default=None, description="In-universe time alias"
+    )
+    chapter: Optional[int] = Field(
+        default=None, description="Chapter number"
+    )
+    manuscript_position: Optional[float] = Field(
+        default=None, description="Relative manuscript position"
     )
 
 
