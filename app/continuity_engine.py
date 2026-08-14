@@ -10,8 +10,21 @@ from app.entity_extractor import extract_entities, EntityExtractor
 
 logger = logging.getLogger("plotpal.continuity_engine")
 
-CLAUDE_CONTINUITY_PROMPT = """You are an expert plot continuity reviewer for Plotpal.
+CLAUDE_CONTINUITY_PROMPT = """You are an experienced co-writer providing direct manuscript feedback for Plotpal.
 Your task is to analyze an active manuscript scene against past timeline states from HydraDB to detect narrative contradictions and plot holes.
+
+Feedback Voice & Tone:
+- Write violation explanations and suggestions like real feedback from a co-writer, not technical database or API output.
+- Be direct about what's broken without being overly formal or forcing energy.
+- Assume the writer is smart: point out the problem clearly and let them decide the creative resolution.
+- Be specific (mention timeline markers, character names, items, locations, and what changed).
+- Suggestions should be practical and straightforward.
+
+Examples of the required feedback style:
+- Character status: "{character} dies back at timeline {past_marker}, then shows up alive and active at timeline {current_marker}. You need to explain what happened between those two points."
+- Item transfers: "{past_owner} has {item} at timeline {past_marker}, then {current_owner} has it at timeline {current_marker}. There's no scene showing the transfer between these two timeline points."
+- Location states: "{location} is locked and inaccessible at timeline {past_marker}, but open at timeline {current_marker}. Nothing in between explains how it got unlocked."
+- Faction/allegiance: "{character} is part of {past_faction} early on at timeline {past_marker}, then they're with {current_faction} at timeline {current_marker} with no explanation for the switch."
 
 You MUST return ONLY a raw JSON object with NO preamble, NO explanations, and NO markdown formatting.
 
@@ -29,17 +42,17 @@ Required JSON Structure:
         "current_state": {},
         "current_timeline_marker": integer
       },
-      "explanation": "Clear description of the contradiction"
+      "explanation": "Direct co-writer feedback explaining what is broken in the narrative"
     }
   ],
   "suggestions": [
-    "Specific actionable recommendation to resolve each plot hole"
+    "Practical recommendation to help the writer resolve the issue"
   ]
 }
 
 Severity Guidelines:
-- "critical": Character death resurrection without magic/event, major timeline paradox.
-- "medium": Item possession mismatch without transfer, locked location accessed without key.
+- "critical": Character death without explanation, major timeline paradox.
+- "medium": Item possession mismatch without transfer, locked location accessed without explanation.
 - "low": Minor status or motivation shift without context.
 - "none": No plot holes or contradictions detected.
 """
@@ -91,11 +104,11 @@ def _detect_rule_violations(
                                 "current_state": cc,
                                 "current_timeline_marker": current_timeline_marker,
                             },
-                            "explanation": f"Character {c_name} was recorded as '{pc.get('physical_status')}' at timeline {p_marker}, but appears '{cc.get('physical_status')}' at timeline {current_timeline_marker} without a resurrection event.",
+                            "explanation": f"{c_name} dies back at timeline {p_marker}, then shows up alive and {cc.get('physical_status', 'active')} at timeline {current_timeline_marker}. You need to explain what happened between those two points.",
                         }
                     )
                     suggestions.append(
-                        f"Clarify or establish a resurrection or survival event for {c_name} before timeline {current_timeline_marker}."
+                        f"Show or mention how {c_name} survived or returned before timeline {current_timeline_marker}, or adjust their status in this scene."
                     )
 
     # 2. Item Ownership Check
@@ -122,11 +135,11 @@ def _detect_rule_violations(
                                         "current_state": {"owner": curr_holder, "item": item_name},
                                         "current_timeline_marker": current_timeline_marker,
                                     },
-                                    "explanation": f"Item '{item_name}' was possessed by {past_holder} at timeline {p_marker}, but is now held by {curr_holder} at timeline {current_timeline_marker} without an explicit transfer event.",
+                                    "explanation": f"{past_holder} has {item_name} at timeline {p_marker}, then {curr_holder} has it at timeline {current_timeline_marker}. There's no scene showing the transfer between these two timeline points.",
                                 }
                             )
                             suggestions.append(
-                                f"Add a scene depicting how {item_name} was transferred from {past_holder} to {curr_holder}."
+                                f"Add a moment showing how {item_name} got from {past_holder} to {curr_holder} between timeline {p_marker} and {current_timeline_marker}."
                             )
 
     # 3. Location State Check
@@ -151,12 +164,45 @@ def _detect_rule_violations(
                                     "current_state": cl,
                                     "current_timeline_marker": current_timeline_marker,
                                 },
-                                "explanation": f"Location '{l_name}' was marked inaccessible/locked at timeline {p_marker}, but is accessed as open/accessible at timeline {current_timeline_marker} without an unlocking event.",
+                                "explanation": f"{l_name} is locked and inaccessible at timeline {p_marker}, but open at timeline {current_timeline_marker}. Nothing in between explains how it got unlocked.",
                             }
                         )
                         suggestions.append(
-                            f"Include a scene demonstrating how {l_name} became accessible or unlocked."
+                            f"Show how {l_name} was unlocked or breached before characters access it at timeline {current_timeline_marker}."
                         )
+
+    # 4. Character Allegiance / Faction Check
+    for cr in current_rels:
+        rel_type = cr.get("relationship_type", "").upper()
+        if rel_type in ("ALLIED_WITH", "MEMBER_OF", "AFFILIATED_WITH", "FACTION"):
+            char_name = cr.get("source_id", "").strip()
+            curr_faction = cr.get("target_id", "").strip()
+
+            for pr in past_rels:
+                p_rel_type = pr.get("relationship_type", "").upper()
+                if p_rel_type in ("ALLIED_WITH", "MEMBER_OF", "AFFILIATED_WITH", "FACTION"):
+                    p_char = pr.get("source_id", "").strip()
+                    past_faction = pr.get("target_id", "").strip()
+                    p_marker = pr.get("timeline_marker", 0)
+
+                    if p_marker < current_timeline_marker and char_name.lower() == p_char.lower():
+                        if past_faction and curr_faction and past_faction.lower() != curr_faction.lower():
+                            violations.append(
+                                {
+                                    "type": "character_status",
+                                    "entities_involved": [char_name, past_faction, curr_faction],
+                                    "timeline_conflict": {
+                                        "past_state": {"character": char_name, "faction": past_faction},
+                                        "past_timeline_marker": p_marker,
+                                        "current_state": {"character": char_name, "faction": curr_faction},
+                                        "current_timeline_marker": current_timeline_marker,
+                                    },
+                                    "explanation": f"{char_name} is part of {past_faction} early on at timeline {p_marker}, then they're with {curr_faction} at timeline {current_timeline_marker} with no explanation for the switch.",
+                                }
+                            )
+                            suggestions.append(
+                                f"Establish the turning point or reason why {char_name} switched from {past_faction} to {curr_faction} between timeline {p_marker} and {current_timeline_marker}."
+                            )
 
     return violations, suggestions
 

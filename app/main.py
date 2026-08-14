@@ -103,6 +103,66 @@ def run_continuity_check(check_req: ContinuityCheck):
     return check_continuity(active_text, marker, hydra_client)
 
 
+# In-memory / HydraDB story store for real user manuscripts
+stories_db = {}
+
+@app.get("/api/stories", status_code=status.HTTP_200_OK)
+def get_all_stories():
+    """
+    Returns all manuscripts / storylines stored in the HydraDB backend.
+    """
+    return list(stories_db.values())
+
+
+@app.post("/api/stories", status_code=status.HTTP_201_CREATED)
+def create_story(story: dict):
+    """
+    Creates or stores a new manuscript storyline in the backend.
+    """
+    story_id = story.get("id") or f"story-{len(stories_db) + 1}"
+    story["id"] = story_id
+    stories_db[story_id] = story
+    logger.info("Stored story %s: %s", story_id, story.get("title", "Untitled"))
+    return story
+
+
+@app.put("/api/stories/{story_id}", status_code=status.HTTP_200_OK)
+def update_story(story_id: str, story: dict):
+    """
+    Updates an existing manuscript storyline.
+    """
+    if story_id not in stories_db:
+        story["id"] = story_id
+        stories_db[story_id] = story
+        return story
+    stories_db[story_id].update(story)
+    return stories_db[story_id]
+
+
+@app.delete("/api/stories/{story_id}", status_code=status.HTTP_200_OK)
+def delete_story(story_id: str):
+    """
+    Deletes a manuscript storyline from the backend.
+    """
+    if story_id in stories_db:
+        del stories_db[story_id]
+        return {"success": True, "deleted": story_id}
+    return {"success": False, "error": "Story not found"}
+
+
+@app.get("/api/graph/entities", status_code=status.HTTP_200_OK)
+def get_graph_entities():
+    """
+    Returns graph entities and timeline records from HydraDB.
+    """
+    try:
+        timeline_data = hydra_client.query_timeline(999999)
+        return timeline_data
+    except Exception as e:
+        logger.error("Failed to query entities from HydraDB: %s", e)
+        return {"nodes": [], "edges": []}
+
+
 # Mount static assets if dist exists
 dist_dir = os.path.join(os.getcwd(), "dist")
 frontend_dist_dir = os.path.join(os.getcwd(), "frontend", "dist")
