@@ -1,47 +1,28 @@
 import React, { useState } from 'react';
 import { 
-  Search, 
-  Bell, 
-  ChevronDown, 
   Sparkles, 
-  User, 
-  ShieldCheck, 
-  FileText, 
   Menu, 
   LogOut, 
-  LogIn, 
-  Sliders,
-  Sparkle
+  ChevronDown
 } from 'lucide-react';
 import { UserProfile } from '../types';
 
 interface TopBarProps {
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
   onOpenCreateModal: () => void;
   onToggleMobileSidebar?: () => void;
-  onToggleDetails?: () => void;
-  hasSelectedManuscript?: boolean;
-  isDetailsOpen?: boolean;
   currentUser: UserProfile | null;
   onOpenGoogleAuth: () => void;
   onSignOut: () => void;
 }
 
 export const TopBar: React.FC<TopBarProps> = ({
-  searchQuery,
-  onSearchChange,
   onOpenCreateModal,
   onToggleMobileSidebar,
-  onToggleDetails,
-  hasSelectedManuscript = false,
-  isDetailsOpen = false,
   currentUser,
   onOpenGoogleAuth,
   onSignOut
 }) => {
   const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [showNotifications, setShowNotifications] = useState(false);
 
   const initials = currentUser?.name
     ? currentUser.name
@@ -53,10 +34,9 @@ export const TopBar: React.FC<TopBarProps> = ({
     : 'W';
 
   return (
-    <header id="litverse-topbar" className="topbar-container">
-      {/* Left: Mobile Hamburger & Search Banner */}
+    <header id="plotpal-topbar" className="topbar-container">
+      {/* Left: Mobile Hamburger & Page Context */}
       <div className="topbar-left-group">
-        {/* Mobile / Tablet Menu Toggle */}
         <button
           id="topbar-mobile-menu-btn"
           type="button"
@@ -67,49 +47,11 @@ export const TopBar: React.FC<TopBarProps> = ({
         >
           <Menu size={20} />
         </button>
-
-        {/* Search Bar - Litverse Yellow Banner Style */}
-        <div className="search-banner-wrapper">
-          <div className="search-input-box">
-            <Search size={18} className="search-icon" />
-            <input
-              id="main-search-input"
-              type="text"
-              placeholder="Search plotlines, timeline markers, character arcs..."
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-              className="search-input-field"
-            />
-            {searchQuery && (
-              <button
-                type="button"
-                className="search-clear-btn"
-                onClick={() => onSearchChange('')}
-                title="Clear search"
-              >
-                ×
-              </button>
-            )}
-          </div>
-        </div>
+        <span className="topbar-title-tag">Storylines</span>
       </div>
 
-      {/* Right Controls: Quick Actions, Notifications & Profile / Google Sign-In */}
+      {/* Right Controls: Create Action & Profile / Google Sign-In */}
       <div className="topbar-right-actions">
-        {/* Details Toggle Button for Tablet / Mobile */}
-        {hasSelectedManuscript && onToggleDetails && (
-          <button
-            id="topbar-details-toggle-btn"
-            type="button"
-            className={`topbar-details-btn ${isDetailsOpen ? 'active' : ''}`}
-            onClick={onToggleDetails}
-            title={isDetailsOpen ? 'Hide Diagnostics' : 'View Plot Diagnostics'}
-          >
-            <Sliders size={16} />
-            <span className="details-toggle-label">Inspector</span>
-          </button>
-        )}
-
         {/* Create Storyline Quick Action */}
         <button
           id="topbar-new-manuscript-btn"
@@ -122,46 +64,6 @@ export const TopBar: React.FC<TopBarProps> = ({
           <span className="btn-create-text">+ New Storyline</span>
         </button>
 
-        {/* Notification Bell */}
-        <div className="notification-wrapper">
-          <button
-            id="topbar-notifications-btn"
-            type="button"
-            className="topbar-icon-btn"
-            onClick={() => {
-              setShowNotifications(!showNotifications);
-              setShowProfileMenu(false);
-            }}
-            title="Continuity Alerts"
-          >
-            <Bell size={18} />
-            <span className="notification-badge">2</span>
-          </button>
-
-          {showNotifications && (
-            <div className="notification-dropdown">
-              <div className="dropdown-header">
-                <span>Recent Continuity Alerts</span>
-                <span className="dropdown-badge">2 active</span>
-              </div>
-              <div className="dropdown-item">
-                <div className="alert-dot critical" />
-                <div>
-                  <div className="dropdown-item-title">Astrolabe ownership unaccounted</div>
-                  <div className="dropdown-item-time">The Clockwork Conspiracy • Act III</div>
-                </div>
-              </div>
-              <div className="dropdown-item">
-                <div className="alert-dot medium" />
-                <div>
-                  <div className="dropdown-item-title">North Tower Gate state mismatch</div>
-                  <div className="dropdown-item-time">The Clockwork Conspiracy • Act III</div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
         {/* Google Sign-in / User Profile Dropdown */}
         {currentUser?.isAuthenticated ? (
           <div className="profile-dropdown-wrapper">
@@ -169,17 +71,13 @@ export const TopBar: React.FC<TopBarProps> = ({
               id="topbar-profile-btn"
               type="button"
               className="profile-btn"
-              onClick={() => {
-                setShowProfileMenu(!showProfileMenu);
-                setShowNotifications(false);
-              }}
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
             >
               <div className="profile-avatar-circle">
                 <span className="avatar-initials">{initials}</span>
               </div>
               <div className="profile-info-text">
                 <span className="profile-name">{currentUser.name}</span>
-                <span className="profile-role">{currentUser.role}</span>
               </div>
               <ChevronDown size={14} className="profile-chevron" />
             </button>
@@ -193,37 +91,6 @@ export const TopBar: React.FC<TopBarProps> = ({
                 <div className="menu-divider" />
                 <button
                   type="button"
-                  className="menu-item"
-                  onClick={() => {
-                    setShowProfileMenu(false);
-                  }}
-                >
-                  <User size={15} />
-                  <span>Story Plot Profile</span>
-                </button>
-                <button
-                  type="button"
-                  className="menu-item"
-                  onClick={() => {
-                    setShowProfileMenu(false);
-                  }}
-                >
-                  <ShieldCheck size={15} />
-                  <span>HydraDB Graph Settings</span>
-                </button>
-                <button
-                  type="button"
-                  className="menu-item"
-                  onClick={() => {
-                    setShowProfileMenu(false);
-                  }}
-                >
-                  <FileText size={15} />
-                  <span>Export Plot Continuity Reports</span>
-                </button>
-                <div className="menu-divider" />
-                <button
-                  type="button"
                   className="menu-item text-danger"
                   onClick={() => {
                     onSignOut();
@@ -233,11 +100,6 @@ export const TopBar: React.FC<TopBarProps> = ({
                   <LogOut size={15} />
                   <span>Sign Out</span>
                 </button>
-                <div className="menu-divider" />
-                <div className="menu-footer-status">
-                  <span>HydraDB Engine: Active</span>
-                  <span className="status-indicator-dot" />
-                </div>
               </div>
             )}
           </div>

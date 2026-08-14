@@ -6,12 +6,7 @@ import {
   AlertTriangle, 
   CheckCircle2, 
   ArrowUpRight, 
-  FileText, 
-  Users, 
-  Layers, 
-  Sparkles,
-  MapPin,
-  Key
+  FileText
 } from 'lucide-react';
 import { Manuscript, GenreFilter } from '../types';
 
@@ -35,8 +30,8 @@ export const ManuscriptGrid: React.FC<ManuscriptGridProps> = ({
   onOpenCreateModal
 }) => {
   const filterCategories: { id: GenreFilter; label: string }[] = [
-    { id: 'all', label: 'All Storylines' },
-    { id: 'mystery', label: 'Mystery & Thriller' },
+    { id: 'all', label: 'All' },
+    { id: 'mystery', label: 'Mystery' },
     { id: 'scifi', label: 'Sci-Fi' },
     { id: 'fantasy', label: 'Fantasy' },
     { id: 'historical', label: 'Historical' },
@@ -45,7 +40,7 @@ export const ManuscriptGrid: React.FC<ManuscriptGridProps> = ({
 
   return (
     <div className="manuscript-grid-container">
-      {/* Category Pills Bar */}
+      {/* Category Pills Bar & Create Action */}
       <div className="category-tabs-bar">
         <div className="category-scroll-group">
           {filterCategories.map((cat) => {
@@ -64,7 +59,6 @@ export const ManuscriptGrid: React.FC<ManuscriptGridProps> = ({
           })}
         </div>
 
-        {/* Create Storyline Prominent Action */}
         <button
           id="create-manuscript-btn-main"
           type="button"
@@ -72,35 +66,22 @@ export const ManuscriptGrid: React.FC<ManuscriptGridProps> = ({
           onClick={onOpenCreateModal}
         >
           <Plus size={16} />
-          <span>Create New Storyline</span>
+          <span>New Storyline</span>
         </button>
       </div>
 
-      {/* Section Header */}
-      <div className="section-title-row">
-        <div>
-          <h2 className="section-heading">Active Storylines & Plot Blueprints</h2>
-          <p className="section-subheading">
-            Audit scene sequences, track character lifelines, verify locked locations, and resolve narrative plot holes.
-          </p>
-        </div>
-        <div className="manuscript-counter-badge">
-          {manuscripts.length} {manuscripts.length === 1 ? 'Storyline' : 'Storylines'}
-        </div>
-      </div>
-
-      {/* Grid of Storyline Cards */}
+      {/* Grid of Storyline Cards or Empty State */}
       {manuscripts.length === 0 ? (
         <div className="empty-grid-placeholder">
           <GitBranch size={40} className="empty-icon" />
-          <h3>No storylines match your query or filter</h3>
-          <p>Create a new story plot outline to start tracking timeline continuity with HydraDB.</p>
+          <h3>No storylines found</h3>
+          <p>Create a storyline manuscript to begin tracking scene timeline continuity.</p>
           <button
             type="button"
             className="btn-primary-orange"
             onClick={onOpenCreateModal}
           >
-            + Create New Storyline
+            + Create Storyline
           </button>
         </div>
       ) : (
@@ -116,7 +97,7 @@ export const ManuscriptGrid: React.FC<ManuscriptGridProps> = ({
                 className={`story-plot-card ${isSelected ? 'selected' : ''}`}
                 onClick={() => onSelectManuscript(story)}
               >
-                {/* Card Plot Header with Narrative Banner */}
+                {/* Card Plot Header */}
                 <div 
                   className="card-plot-banner"
                   style={{ background: story.coverBg }}
@@ -141,33 +122,12 @@ export const ManuscriptGrid: React.FC<ManuscriptGridProps> = ({
                   </p>
                 </div>
 
-                {/* Card Body & Plot Details */}
+                {/* Card Body */}
                 <div className="card-info-body">
-                  {/* Premise & Hook */}
                   <p className="card-excerpt-snippet">
                     "{story.excerpt}"
                   </p>
 
-                  {/* Tracked Entities Mini Bar */}
-                  {story.trackedEntities && story.trackedEntities.length > 0 && (
-                    <div className="card-entities-preview">
-                      <span className="entities-label-text">
-                        <Users size={11} /> Tracked:
-                      </span>
-                      <div className="entities-inline-chips">
-                        {story.trackedEntities.slice(0, 3).map((e, idx) => (
-                          <span key={idx} className="mini-entity-tag">
-                            {e.name}
-                          </span>
-                        ))}
-                        {story.trackedEntities.length > 3 && (
-                          <span className="mini-entity-more">+{story.trackedEntities.length - 3}</span>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Chapters & Time Stats */}
                   <div className="card-stats-row">
                     <span className="stat-pill">
                       <FileText size={13} />
@@ -179,12 +139,11 @@ export const ManuscriptGrid: React.FC<ManuscriptGridProps> = ({
                     </span>
                   </div>
 
-                  {/* Continuity Status Badge */}
                   <div className="card-status-row">
                     {hasViolations ? (
                       <span className="status-badge-violation">
                         <AlertTriangle size={13} />
-                        <span>{story.violationsCount} Plot {story.violationsCount === 1 ? 'Contradiction' : 'Contradictions'}</span>
+                        <span>{story.violationsCount} {story.violationsCount === 1 ? 'Issue' : 'Issues'}</span>
                       </span>
                     ) : (
                       <span className="status-badge-clean">
@@ -192,13 +151,8 @@ export const ManuscriptGrid: React.FC<ManuscriptGridProps> = ({
                         <span>Continuity Verified</span>
                       </span>
                     )}
-
-                    <span className="rating-pill-tag">
-                      {story.ratingScore || 'HydraDB Synced'}
-                    </span>
                   </div>
 
-                  {/* Open Plot Editor Button */}
                   <button
                     id={`open-editor-btn-${story.id}`}
                     type="button"
@@ -208,7 +162,7 @@ export const ManuscriptGrid: React.FC<ManuscriptGridProps> = ({
                       onOpenEditor(story);
                     }}
                   >
-                    <span>Open Plot Editor</span>
+                    <span>Open Editor</span>
                     <ArrowUpRight size={15} />
                   </button>
                 </div>

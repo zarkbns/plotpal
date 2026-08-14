@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { X, Sparkles, BookOpen, Clock, Tag, Feather, GitBranch } from 'lucide-react';
+import { X, Sparkles, Clock, Tag, Feather, GitBranch } from 'lucide-react';
 import { Manuscript } from '../types';
 
 interface CreateManuscriptModalProps {
@@ -13,7 +13,7 @@ export const CreateManuscriptModal: React.FC<CreateManuscriptModalProps> = ({
   isOpen,
   onClose,
   onCreate,
-  defaultAuthor = 'Alex Mercer'
+  defaultAuthor = 'Author'
 }) => {
   const [title, setTitle] = useState('');
   const [author, setAuthor] = useState(defaultAuthor);
@@ -30,11 +30,11 @@ export const CreateManuscriptModal: React.FC<CreateManuscriptModalProps> = ({
 
     onCreate({
       title: title.trim(),
-      author: author.trim() || 'Anonymous Author',
+      author: author.trim() || 'Author',
       genre,
       inUniverseTime: Number(inUniverseTime) || 100,
-      description: description.trim() || 'A new story plot outline tracked in HydraDB.',
-      excerpt: initialText.trim() || 'The opening scene of the storyline begins here...',
+      description: description.trim() || 'A new storyline.',
+      excerpt: initialText.trim() || 'Opening scene begins...',
       chaptersCount: 1,
       currentChapter: 1,
       timelineSpan: `Timeline ${inUniverseTime} – ...`,
@@ -43,7 +43,7 @@ export const CreateManuscriptModal: React.FC<CreateManuscriptModalProps> = ({
           id: 1,
           title: 'Act I: Scene 01',
           timelineMarker: Number(inUniverseTime) || 100,
-          text: initialText.trim() || 'The opening scene of the storyline begins here...',
+          text: initialText.trim() || 'Opening scene begins...',
           wordCount: initialText.trim() ? initialText.trim().split(/\s+/).length : 50
         }
       ]
@@ -61,7 +61,7 @@ export const CreateManuscriptModal: React.FC<CreateManuscriptModalProps> = ({
         <div className="modal-header">
           <div className="modal-title-group">
             <Sparkles size={18} className="text-orange" />
-            <h3>Create New Story Plot Blueprint</h3>
+            <h3>Create New Storyline</h3>
           </div>
           <button 
             type="button" 
@@ -79,12 +79,12 @@ export const CreateManuscriptModal: React.FC<CreateManuscriptModalProps> = ({
             <div className="modal-input-group full-width">
               <label className="modal-label">
                 <GitBranch size={14} />
-                <span>Story Plot / Working Title</span>
+                <span>Story Title</span>
               </label>
               <input
                 type="text"
                 required
-                placeholder="e.g. The Obsidian Cipher"
+                placeholder="e.g. The Glass Kingdom"
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 className="modal-input"
@@ -95,11 +95,11 @@ export const CreateManuscriptModal: React.FC<CreateManuscriptModalProps> = ({
             <div className="modal-input-group">
               <label className="modal-label">
                 <Feather size={14} />
-                <span>Writer / Narrative Architect</span>
+                <span>Writer</span>
               </label>
               <input
                 type="text"
-                placeholder="e.g. Alex Mercer"
+                placeholder="e.g. Elena Vance"
                 value={author}
                 onChange={(e) => setAuthor(e.target.value)}
                 className="modal-input"
@@ -110,20 +110,20 @@ export const CreateManuscriptModal: React.FC<CreateManuscriptModalProps> = ({
             <div className="modal-input-group">
               <label className="modal-label">
                 <Tag size={14} />
-                <span>Storyline Genre</span>
+                <span>Genre</span>
               </label>
               <select
                 value={genre}
                 onChange={(e) => setGenre(e.target.value)}
                 className="modal-select"
               >
-                <option value="Mystery">Mystery & Thriller</option>
+                <option value="Mystery">Mystery</option>
                 <option value="Sci-Fi">Sci-Fi</option>
                 <option value="Fantasy">Fantasy</option>
-                <option value="Historical">Historical Fiction</option>
+                <option value="Historical">Historical</option>
                 <option value="Dystopian">Dystopian</option>
-                <option value="Thriller">Psychological Thriller</option>
-                <option value="Romance">Romantic Drama</option>
+                <option value="Thriller">Thriller</option>
+                <option value="Romance">Romance</option>
               </select>
             </div>
 
@@ -141,14 +141,14 @@ export const CreateManuscriptModal: React.FC<CreateManuscriptModalProps> = ({
               />
             </div>
 
-            {/* Storyline Logline / Description */}
+            {/* Premise */}
             <div className="modal-input-group full-width">
               <label className="modal-label">
-                <span>Story Plot Premise & Core Conflict</span>
+                <span>Premise</span>
               </label>
               <input
                 type="text"
-                placeholder="Brief synopsis of core conflict, central protagonist goals, and locked lore rules..."
+                placeholder="Brief synopsis of core conflict..."
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 className="modal-input"
@@ -158,11 +158,11 @@ export const CreateManuscriptModal: React.FC<CreateManuscriptModalProps> = ({
             {/* Opening Scene Text */}
             <div className="modal-input-group full-width">
               <label className="modal-label">
-                <span>Initial Scene Draft / Manuscript Excerpt</span>
+                <span>Opening Scene Draft</span>
               </label>
               <textarea
                 rows={4}
-                placeholder="Write or paste your first scene draft. Mention characters, acquired items, or location states..."
+                placeholder="Write or paste your first scene draft..."
                 value={initialText}
                 onChange={(e) => setInitialText(e.target.value)}
                 className="modal-textarea"
@@ -182,7 +182,7 @@ export const CreateManuscriptModal: React.FC<CreateManuscriptModalProps> = ({
               type="submit"
               className="btn-modal-create"
             >
-              + Create Storyline & Sync with HydraDB
+              Create Storyline
             </button>
           </div>
         </form>

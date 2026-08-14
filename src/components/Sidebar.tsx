@@ -1,43 +1,48 @@
 import React from 'react';
 import { 
-  Home, 
-  GitBranch, 
-  Search, 
-  Bookmark, 
-  Settings, 
-  HelpCircle, 
-  LogOut,
   Flame,
-  Layers,
   X,
-  Database,
-  ShieldCheck
+  Plus,
+  MessageSquare,
+  Clock,
+  Compass,
+  Layers,
+  Trash2,
+  LogOut,
+  Sparkles
 } from 'lucide-react';
-import { NavTab } from '../types';
+import { ChatThread, ChatMode, UserProfile } from '../types';
 
 interface SidebarProps {
-  activeTab: NavTab;
-  onSelectTab: (tab: NavTab) => void;
-  manuscriptCount: number;
-  isOpenMobile?: boolean;
-  onCloseMobile?: () => void;
+  isOpenMobile: boolean;
+  onCloseMobile: () => void;
+  threads: ChatThread[];
+  activeThreadId: string;
+  onSelectThread: (threadId: string) => void;
+  onNewPlot: () => void;
+  onDeleteThread: (threadId: string, e: React.MouseEvent) => void;
+  currentUser: UserProfile | null;
+  onSignOut: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({
-  activeTab,
-  onSelectTab,
-  manuscriptCount,
-  isOpenMobile = false,
-  onCloseMobile
-}) => {
-  const navItems: { id: NavTab; label: string; icon: React.ReactNode; badge?: number | string }[] = [
-    { id: 'home', label: 'Plot Dashboard', icon: <Home size={19} /> },
-    { id: 'manuscripts', label: 'My Storylines', icon: <GitBranch size={19} />, badge: manuscriptCount },
-    { id: 'search', label: 'Plot Search', icon: <Search size={19} /> },
-    { id: 'saved', label: 'Saved Blueprints', icon: <Bookmark size={19} /> },
-    { id: 'settings', label: 'HydraDB Settings', icon: <Settings size={19} /> },
-  ];
+const MODE_ICONS: Record<ChatMode, React.FC<{ size?: number; className?: string }>> = {
+  architect: Compass,
+  continuity: Clock,
+  dialogue: MessageSquare,
+  worldbuilding: Layers,
+};
 
+export const Sidebar: React.FC<SidebarProps> = ({
+  isOpenMobile,
+  onCloseMobile,
+  threads,
+  activeThreadId,
+  onSelectThread,
+  onNewPlot,
+  onDeleteThread,
+  currentUser,
+  onSignOut,
+}) => {
   return (
     <>
       {/* Mobile Backdrop Overlay */}
@@ -50,97 +55,162 @@ export const Sidebar: React.FC<SidebarProps> = ({
       )}
 
       <aside 
-        id="litverse-sidebar" 
+        id="plotpal-sidebar" 
         className={`sidebar-container ${isOpenMobile ? 'mobile-open' : ''}`}
       >
-        {/* Brand / Logo + Mobile Close */}
+        {/* Top Brand & Close Header */}
         <div className="sidebar-header-row">
           <div 
             className="sidebar-logo-container" 
             onClick={() => {
-              onSelectTab('home');
-              if (onCloseMobile) onCloseMobile();
+              onNewPlot();
+              onCloseMobile();
             }}
           >
             <div className="logo-flame-icon">
-              <Flame size={22} className="flame-svg" />
+              <Flame size={20} className="flame-svg text-white" />
             </div>
             <div className="logo-text-group">
               <span className="logo-text">plotpal</span>
-              <span className="logo-tagline">plot & continuity engine</span>
             </div>
           </div>
 
-          {/* Close button on mobile */}
-          {onCloseMobile && (
-            <button
-              type="button"
-              className="sidebar-mobile-close-btn"
-              onClick={onCloseMobile}
-              aria-label="Close Navigation Menu"
-            >
-              <X size={20} />
-            </button>
-          )}
-        </div>
-
-        {/* Primary Navigation */}
-        <nav className="sidebar-nav" aria-label="Main Navigation">
-          <div className="nav-section-label">Navigation</div>
-          {navItems.map((item) => {
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                id={`nav-item-${item.id}`}
-                type="button"
-                className={`sidebar-nav-btn ${isActive ? 'active' : ''}`}
-                onClick={() => {
-                  onSelectTab(item.id);
-                  if (onCloseMobile) onCloseMobile();
-                }}
-                title={item.label}
-              >
-                <span className="nav-icon-wrapper">{item.icon}</span>
-                <span className="nav-label-text">{item.label}</span>
-                {item.badge !== undefined && (
-                  <span className={`nav-badge ${isActive ? 'active-badge' : ''}`}>
-                    {item.badge}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </nav>
-
-        {/* HydraDB Status Card */}
-        <div className="sidebar-hydra-card">
-          <div className="hydra-card-header">
-            <Database size={14} className="hydra-icon" />
-            <span>HydraDB Graph</span>
-          </div>
-          <div className="hydra-card-status">
-            <span className="hydra-pulse-dot"></span>
-            <span>Vector & Graph Synced</span>
-          </div>
-          <p className="hydra-card-sub">No Firebase / Pure HydraDB</p>
-        </div>
-
-        {/* Secondary Bottom Links */}
-        <div className="sidebar-bottom-links">
           <button
             type="button"
-            className="sidebar-bottom-btn"
-            onClick={() => {
-              console.log('[Plotpal] Opened Support modal');
-              if (onCloseMobile) onCloseMobile();
-            }}
+            className="sidebar-mobile-close-btn"
+            onClick={onCloseMobile}
+            aria-label="Close menu"
           >
-            <HelpCircle size={16} />
-            <span>Plot Help & Docs</span>
+            <X size={18} />
           </button>
         </div>
+
+        {/* 1. New Plot Action (Replaces Overview; Studio, Storylines, Account are removed) */}
+        <div className="sidebar-top-action-group">
+          <button
+            type="button"
+            className="sidebar-new-plot-btn"
+            onClick={() => {
+              onNewPlot();
+              onCloseMobile();
+            }}
+          >
+            <Plus size={18} className="text-white shrink-0" />
+            <span className="font-bold">New Plot</span>
+          </button>
+        </div>
+
+        {/* 2. Chat History / Recent Chats List */}
+        <div className="sidebar-chat-history-section">
+          <div className="sidebar-section-header">
+            <span className="section-header-title">Recent Chats</span>
+            {threads.length > 0 && (
+              <span className="section-header-count">{threads.length}</span>
+            )}
+          </div>
+
+          <div className="sidebar-threads-list-scroll">
+            {threads.length === 0 ? (
+              <div className="sidebar-empty-threads">
+                <p>No recent plots yet.</p>
+                <button
+                  type="button"
+                  className="sidebar-empty-cta"
+                  onClick={() => {
+                    onNewPlot();
+                    onCloseMobile();
+                  }}
+                >
+                  <Sparkles size={13} />
+                  <span>Start your first plot</span>
+                </button>
+              </div>
+            ) : (
+              threads.map((thread) => {
+                const ModeIcon = MODE_ICONS[thread.mode] || MessageSquare;
+                const isActive = thread.id === activeThreadId;
+
+                return (
+                  <div
+                    key={thread.id}
+                    className={`sidebar-thread-item ${isActive ? 'active' : ''}`}
+                    onClick={() => {
+                      onSelectThread(thread.id);
+                      onCloseMobile();
+                    }}
+                    title={thread.title}
+                  >
+                    <div className="thread-item-icon">
+                      <ModeIcon size={15} />
+                    </div>
+
+                    <div className="thread-item-content">
+                      <span className="thread-item-title">{thread.title || 'Untitled Plot'}</span>
+                      <span className="thread-item-mode">
+                        {thread.mode === 'architect'
+                          ? 'Plot Architect'
+                          : thread.mode === 'continuity'
+                          ? 'Continuity'
+                          : thread.mode === 'dialogue'
+                          ? 'Dialogue'
+                          : 'Worldbuilding'}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      className="thread-item-delete-btn"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDeleteThread(thread.id, e);
+                      }}
+                      title="Delete chat"
+                      aria-label="Delete chat"
+                    >
+                      <Trash2 size={13} />
+                    </button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* 3. Bottom User Profile & Sign Out */}
+        {currentUser && (
+          <div className="sidebar-user-footer-row">
+            <div className="sidebar-user-chip">
+              {currentUser.picture ? (
+                <img
+                  src={currentUser.picture}
+                  alt={currentUser.name}
+                  className="sidebar-user-avatar"
+                />
+              ) : (
+                <div className="sidebar-user-initial">
+                  {currentUser.name.charAt(0).toUpperCase()}
+                </div>
+              )}
+              <div className="sidebar-user-text">
+                <span className="sidebar-user-name">{currentUser.name}</span>
+                <span className="sidebar-user-email">{currentUser.email || 'Author'}</span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              className="sidebar-signout-btn"
+              onClick={onSignOut}
+              title="Sign Out"
+              aria-label="Sign Out"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
+        )}
       </aside>
     </>
   );
 };
+
+export default Sidebar;

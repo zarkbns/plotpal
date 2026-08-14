@@ -4,19 +4,15 @@ import {
   RotateCw, 
   Check, 
   AlertTriangle, 
-  Layers, 
-  Sparkles, 
   ChevronDown, 
   FileEdit, 
   ShieldAlert, 
   Type, 
-  Plus, 
   Save, 
   ChevronLeft, 
   ChevronRight, 
   Clock, 
-  Database,
-  Sliders
+  Sparkles
 } from 'lucide-react';
 import { Manuscript, Violation } from '../types';
 
@@ -35,10 +31,10 @@ export const ManuscriptEditorView: React.FC<ManuscriptEditorViewProps> = ({
 }) => {
   const currentChapterData = manuscript.chapters.find(c => c.id === manuscript.currentChapter) || manuscript.chapters[0] || {
     id: 1,
-    title: 'Act I: The Beginning',
+    title: 'Act I: Scene 01',
     timelineMarker: manuscript.inUniverseTime,
     text: manuscript.excerpt,
-    wordCount: 1200
+    wordCount: 120
   };
 
   const [selectedChapterId, setSelectedChapterId] = useState<number>(currentChapterData.id);
@@ -68,7 +64,6 @@ export const ManuscriptEditorView: React.FC<ManuscriptEditorViewProps> = ({
   const handleRunCheck = async () => {
     setIsChecking(true);
     try {
-      // Call backend API if available
       const payload = {
         active_text: editorText,
         current_timeline_marker: timelineMarker,
@@ -77,23 +72,18 @@ export const ManuscriptEditorView: React.FC<ManuscriptEditorViewProps> = ({
         text: editorText
       };
       
-      const response = await fetch('/check-continuity', {
+      await fetch('/check-continuity', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('[Plotpal] Backend check response:', data);
-      }
     } catch (err) {
-      console.warn('[Plotpal] Check continuity API fallback to client logic:', err);
+      console.warn('Check continuity fetch:', err);
     } finally {
       onCheckContinuity(editorText, timelineMarker, selectedChapterId);
       setTimeout(() => {
         setIsChecking(false);
-      }, 500);
+      }, 400);
     }
   };
 
@@ -112,21 +102,21 @@ export const ManuscriptEditorView: React.FC<ManuscriptEditorViewProps> = ({
         body: JSON.stringify(payload)
       });
     } catch (err) {
-      console.warn('[Plotpal] Ingest API called:', err);
+      console.warn('Ingest fetch:', err);
     } finally {
       if (onIngestScene) {
         onIngestScene(editorText, timelineMarker, selectedChapterId);
       }
       setTimeout(() => {
         setIsSaving(false);
-      }, 400);
+      }, 300);
     }
   };
 
   const violations: Violation[] = manuscript.violations;
 
   return (
-    <div id="litverse-editor-view" className="editor-view-container">
+    <div id="plotpal-editor-view" className="editor-view-container">
       {/* Top Header of Editor */}
       <header className="editor-top-nav">
         <div className="editor-top-left">
@@ -187,10 +177,10 @@ export const ManuscriptEditorView: React.FC<ManuscriptEditorViewProps> = ({
             className="editor-save-btn"
             onClick={handleIngestScene}
             disabled={isSaving}
-            title="Save and Ingest scene into HydraDB vector graph"
+            title="Save scene"
           >
             <Save size={14} />
-            <span className="save-btn-text">{isSaving ? 'Syncing...' : 'Save Scene'}</span>
+            <span className="save-btn-text">{isSaving ? 'Saving...' : 'Save'}</span>
           </button>
 
           <button
@@ -206,7 +196,7 @@ export const ManuscriptEditorView: React.FC<ManuscriptEditorViewProps> = ({
         </div>
       </header>
 
-      {/* Typography Formatting Bar (Collapsible) */}
+      {/* Typography Formatting Bar */}
       {showFormatBar && (
         <div className="editor-format-panel">
           <div className="format-option-group">
@@ -291,21 +281,21 @@ export const ManuscriptEditorView: React.FC<ManuscriptEditorViewProps> = ({
         <section className={`editor-manuscript-pane ${mobileTab === 'editor' ? 'mobile-visible' : 'mobile-hidden'}`}>
           <div className="manuscript-pane-header">
             <div className="pane-title-group">
-              <span className="manuscript-badge">Scene Draft & Narrative Flow</span>
+              <span className="manuscript-badge">Scene Draft</span>
               <h3 className="chapter-display-title">
                 {manuscript.chapters.find(c => c.id === selectedChapterId)?.title || `Chapter ${selectedChapterId}`}
               </h3>
             </div>
 
             <div className="timeline-marker-input-group">
-              <span className="marker-label">Timeline Marker (T):</span>
+              <span className="marker-label">Marker (T):</span>
               <input
                 id="timeline-marker-input"
                 type="number"
                 value={timelineMarker}
                 onChange={(e) => setTimelineMarker(Number(e.target.value) || 0)}
                 className="timeline-marker-input"
-                title="In-universe timeline marker (e.g. year, day, or scene timestamp)"
+                title="In-universe timeline marker"
               />
             </div>
           </div>
@@ -316,7 +306,7 @@ export const ManuscriptEditorView: React.FC<ManuscriptEditorViewProps> = ({
               id="manuscript-editor-textarea"
               value={editorText}
               onChange={(e) => setEditorText(e.target.value)}
-              placeholder="Write or paste your story scene draft here. Add character dialogues, item exchanges, and locked location descriptions..."
+              placeholder="Write or paste your story scene draft here. Add character dialogue, actions, item exchanges, and locked location descriptions..."
               className={`manuscript-textarea font-${fontFamily}`}
               style={{ fontSize: `${fontSize}px` }}
             />
@@ -331,11 +321,6 @@ export const ManuscriptEditorView: React.FC<ManuscriptEditorViewProps> = ({
               <span className="stats-dot">•</span>
               <span>Scene {selectedChapterId} of {manuscript.chaptersCount}</span>
             </div>
-
-            <div className="hydra-sync-indicator">
-              <Database size={13} />
-              <span>HydraDB Graph Connected</span>
-            </div>
           </div>
         </section>
 
@@ -344,7 +329,7 @@ export const ManuscriptEditorView: React.FC<ManuscriptEditorViewProps> = ({
           <div className="continuity-pane-header">
             <div className="continuity-title-group">
               <Sparkles size={16} className="text-orange" />
-              <h3 className="continuity-heading">Plot Hole & Continuity Diagnostics</h3>
+              <h3 className="continuity-heading">Plot Continuity Diagnostics</h3>
             </div>
             <span className={`violations-count-badge ${violations.length > 0 ? 'badge-alert' : 'badge-clean'}`}>
               {violations.length} {violations.length === 1 ? 'Contradiction' : 'Contradictions'}
@@ -358,11 +343,8 @@ export const ManuscriptEditorView: React.FC<ManuscriptEditorViewProps> = ({
                 <Check size={28} className="clean-hero-icon" />
                 <h4>No Plot Holes Detected</h4>
                 <p>
-                  This scene aligns with all previous narrative states, character lifelines, item transfers, and locked gates recorded in HydraDB.
+                  This scene aligns with previous narrative states, character lifelines, item transfers, and locked gates.
                 </p>
-                <div className="clean-tip-box">
-                  <strong>Writer Insight:</strong> Advance the timeline marker to test future scene sequences or add new character interactions.
-                </div>
               </div>
             ) : (
               violations.map((v, index) => {
@@ -396,7 +378,7 @@ export const ManuscriptEditorView: React.FC<ManuscriptEditorViewProps> = ({
                       </div>
                     )}
 
-                    {/* Co-writer direct feedback */}
+                    {/* Feedback */}
                     <div className="violation-explanation-box">
                       <p className="violation-feedback-text">
                         "{v.explanation}"
@@ -428,10 +410,10 @@ export const ManuscriptEditorView: React.FC<ManuscriptEditorViewProps> = ({
                       </div>
                     )}
 
-                    {/* Practical Suggestions */}
+                    {/* Suggestions */}
                     {v.suggestions && v.suggestions.length > 0 && (
                       <div className="violation-suggestions-group">
-                        <span className="suggestions-header">Continuity Fix Suggestions:</span>
+                        <span className="suggestions-header">Fix Suggestions:</span>
                         <ul className="suggestions-list">
                           {v.suggestions.map((sug, sIdx) => (
                             <li key={sIdx} className="suggestion-item">
@@ -449,8 +431,8 @@ export const ManuscriptEditorView: React.FC<ManuscriptEditorViewProps> = ({
         </aside>
       </main>
 
-      {/* Bottom Story Plot Beat & Timeline Navigator Bar (No Audio elements) */}
-      <footer id="litverse-plot-navigator" className="plot-navigator-bar">
+      {/* Bottom Story Plot Beat & Timeline Navigator Bar */}
+      <footer id="plotpal-plot-navigator" className="plot-navigator-bar">
         {/* Left: Active Story & Chapter Overview */}
         <div className="plot-nav-left-info">
           <div className="plot-marker-icon-box">
@@ -465,7 +447,7 @@ export const ManuscriptEditorView: React.FC<ManuscriptEditorViewProps> = ({
         {/* Center: Beat Sheet & Timeline Marker Controls */}
         <div className="plot-nav-center-controls">
           <div className="plot-beat-buttons-row">
-            <span className="plot-beats-label">Plot Beats:</span>
+            <span className="plot-beats-label">Beats:</span>
             {['Act I (Setup)', 'Act II (Rising)', 'Act III (Climax)', 'Act IV (Resolution)'].map((beatName) => {
               const isActive = activeBeat === beatName.split(' ')[0] + ' ' + beatName.split(' ')[1];
               return (
@@ -525,13 +507,8 @@ export const ManuscriptEditorView: React.FC<ManuscriptEditorViewProps> = ({
           </div>
         </div>
 
-        {/* Right: Quick Ingest & Status */}
+        {/* Right: Quick Action */}
         <div className="plot-nav-right-status">
-          <div className="hydra-status-pill">
-            <span className="status-live-dot" />
-            <span>HydraDB Graph</span>
-          </div>
-
           <button
             type="button"
             className="plot-quick-tool-btn"

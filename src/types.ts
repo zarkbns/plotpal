@@ -97,5 +97,46 @@ export interface ManuscriptFormData {
   manuscript_position?: number | string;
 }
 
-export type NavTab = 'home' | 'manuscripts' | 'search' | 'saved' | 'settings';
+export type ChatMode = 'architect' | 'continuity' | 'dialogue' | 'worldbuilding';
+
+export interface TimelinePoint {
+  marker: number;
+  event: string;
+  character?: string;
+  location?: string;
+}
+
+export interface ChatMessage {
+  id: string;
+  role: 'user' | 'assistant';
+  content: string;
+  timestamp: string;
+  mode?: ChatMode;
+  suggestedActions?: string[];
+  timelinePoints?: TimelinePoint[];
+}
+
+export interface ChatThread {
+  id: string;
+  title: string;
+  createdAt: string;
+  updatedAt: string;
+  messages: ChatMessage[];
+  storylineId?: string;
+  mode: ChatMode;
+}
+
+export type NavTab = 'chat' | 'editor' | 'storylines' | 'login';
 export type GenreFilter = 'all' | 'fantasy' | 'scifi' | 'romance' | 'mystery' | 'thriller' | 'historical' | 'dystopian';
+
+export type PersonaTone = 'cowriter' | 'editor' | 'literary' | 'cinematic' | 'continuity' | 'custom';
+
+export interface AiTrainingConfig {
+  persona: PersonaTone;
+  customInstructions: string;
+  temperature: number; // 0.2 to 1.0
+  verbosity: 'concise' | 'balanced' | 'rich';
+  critiqueDirectness: 'direct' | 'balanced' | 'gentle';
+  autoInjectStoryContext: boolean;
+}
+
